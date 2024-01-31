@@ -2,7 +2,7 @@ import requests
 from lxml import etree
 import csv
  
-url = 'http://books.toscrape.com/'
+url = 'https://www.fifa.com/fifa-world-ranking/'
  
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
@@ -15,18 +15,25 @@ try:
         parser = etree.HTMLParser()
         tree = etree.fromstring(response.content, parser)
         
-        rows = tree.xpath('//table[@class="table table-striped"]//tr')
+        # Найдем таблицу с данными с помощью XPath
+        table = tree.xpath('//table[@class="table tbl-ranking"]')[0]
         
-        with open('book_data.csv', 'w', newline='', encoding='utf-8') as file:
+        # Извлечем заголовки таблицы
+        headers = [th.text for th in table.xpath('.//th')]
+        
+        # Извлечем данные из строк таблицы
+        rows = table.xpath('.//tr')
+        
+        data = []
+        for row in rows:
+            row_data = [td.text.strip() for td in row.xpath('.//td')]
+            data.append(row_data)
+        
+        with open('fifa_ranking_data.csv', 'w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
-            
-            for row in rows:
-                data = row.xpath('.//text()')
-                data = [item.strip() for item in data if item.strip()]
-                
-                if len(data) >= 3:
-                    writer.writerow(data)
-                    
+            writer.writerow(headers)
+            writer.writerows(data)
+        
         print('Данные успешно сохранены в CSV-файл.')
     else:
         print('Ошибка запроса: код состояния', response.status_code)
